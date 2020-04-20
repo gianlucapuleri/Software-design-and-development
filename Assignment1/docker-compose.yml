@@ -1,0 +1,62 @@
+version: "3.2"
+services:
+  php:
+    build: './php/'
+    networks:
+      - backend
+    volumes:
+      - ./public_html/:/var/www/html/
+  apache:
+    build: './apache/'
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - frontend
+      - backend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public_html/:/var/www/html/
+  mysql:
+    image: mysql:5.7
+    networks:
+      - backend
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      
+  prometheus:
+    image: prom/prometheus:0.18.0
+    volumes:
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+        - '-config.file=/etc/prometheus/prometheus.yml'
+    ports:
+        - '9090:9090'
+    volumes:
+        - prometheus_data:/prometheus
+        
+            
+  node-exporter:
+    image: prom/node-exporter:v0.15.0 
+    ports:
+        - '9100:9100'
+            
+  grafana:
+    image: grafana/grafana:3.0.0-beta7
+    environment:
+        - GF_SECURITY_ADMIN_PASSWORD=pass
+    depends_on:
+        - prometheus
+    ports:
+        - "3000:3000"
+    volumes:
+        - grafana_data:/var/lib/grafana
+
+networks:
+  frontend:
+  backend:
+  
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
